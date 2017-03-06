@@ -8,4 +8,6 @@
 
 ## Eligibility: Invited is Required.
 
+## Book: Advanced R by Hadley Wickham
+
 
