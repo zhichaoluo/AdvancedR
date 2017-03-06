@@ -19,7 +19,7 @@ header-includes:
 
 ## 向量运算
 
-- 测试：在y向量中查询1连续出现2次的位置
+- 测试：计算在y向量中数字1连续出现2次的位置。
 
 ```{r,eval=FALSE}
 #y<- c(1,0,0,1,1,1,0,1,1)
@@ -30,16 +30,7 @@ header-includes:
 
 ## 数据结构
 
-- 测试1. 将Anscombe数据集转换成
-tidydata结构
-```{r,eval=FALSE}
-head(anscombe)
-
-#目标结构 x y group
-```
-
-
-- 测试2. 计算每天最低气温和最高气温的差值
+- 测试：计算每天最低气温和最高气温的差值
 
 ```{r,eval=FALSE}
 raw <- read.delim("data/weather.txt",check.names = F, na.strings = ".")
