@@ -1,8 +1,16 @@
 ---
-title: "Advanced R"
-output:
-  pdf_document: default
+title: "Advanced R 研讨"
+subtitle: "目录"
+output: 
+  pdf_document: 
+    fig_caption: yes
+    keep_tex: yes
+    latex_engine: xelatex
+    toc: yes
+header-includes:
+- \usepackage{xeCJK}
 ---
+
 
 # Part I 基础知识
 ## Chapter1 简介

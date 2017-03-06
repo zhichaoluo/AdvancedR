@@ -1,0 +1,57 @@
+---
+title: "Advanced R 研讨"
+subtitle: "水平测试"
+author: "罗智超Rokia.org"
+output: 
+  pdf_document: 
+    fig_caption: yes
+    keep_tex: yes
+    latex_engine: xelatex
+    toc: yes
+header-includes:
+- \usepackage{xeCJK}
+---
+
+
+# 水平测试
+
+请独立完成以下测试，并记录完成以下每道测试所花费的时间
+
+## 向量运算
+
+- 测试：在y向量中查询1连续出现2次的位置
+
+```{r,eval=FALSE}
+#y<- c(1,0,0,1,1,1,0,1,1)
+#计算结果为：c(4,5,8)
+
+```
+
+
+## 数据结构
+
+- 测试1. 将Anscombe数据集转换成
+tidydata结构
+```{r,eval=FALSE}
+head(anscombe)
+
+#目标结构 x y group
+```
+
+
+- 测试2. 计算每天最低气温和最高气温的差值
+
+```{r,eval=FALSE}
+raw <- read.delim("data/weather.txt",check.names = F, na.strings = ".")
+```
+
+## 分组处理
+
+- 测试：计算每个航空公司(UniqueCarrier)每个月到达延误时间(ArrDelay)的十分位(quantile)的均值。
+
+```{r,eval=FALSE}
+#计算hfflights
+library(hflights)
+str(hflights)
+```
+
