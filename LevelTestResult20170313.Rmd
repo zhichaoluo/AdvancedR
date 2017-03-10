@@ -1,0 +1,41 @@
+---
+title: "Level Test Result"
+author: "Jiayu (Alice) Wu"
+date: "Mar.13,2017"
+output: pdf_document
+---
+
+
+## 向量运算
+
+- 测试：编写一个函数findNum(y,x,l)计算在y向量中数字x连续出现l次的位置。
+
+```{r,eval=FALSE}
+#y<- c(1,0,0,1,1,1,0,1,1)
+#计算结果为：c(4,5,8)
+findNum<-function(y,l){
+  #y是输入向量
+  #l是1连续出现的长度
+}
+
+```
+
+
+## 数据结构
+
+- 测试：计算每天最低气温和最高气温的差值
+
+```{r,eval=FALSE}
+raw <- read.delim("data/weather.txt",check.names = F, na.strings = ".")
+```
+
+## 分组处理
+
+- 测试：计算每个航空公司(UniqueCarrier)每个月到达延误时间(ArrDelay)的十分位(quantile)的均值。
+
+```{r,eval=FALSE}
+#计算hfflights
+library(hflights)
+str(hflights)
+```
+
