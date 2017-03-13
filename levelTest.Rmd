@@ -19,7 +19,7 @@ header-includes:
 
 ## 向量运算
 
-- 测试：编写一个函数findNum(x,tag,l)计算在x向量中数字tag连续出现k次的位置。
+- 测试：编写一个函数findRuns(x,tag,l)计算在x向量中数字tag连续出现k次的位置。
 
 ```{r,eval=FALSE}
 #x<- c(1,0,0,1,1,1,0,1,1)
