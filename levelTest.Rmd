@@ -117,3 +117,49 @@ dat_delay<- dat_qua[,.(meandelay=mean(ArrDelay)),by=.(UniqueCarrier,Year,Month,q
 head(dat_delay)
 ```
 
+## 讨论引申问题
+
+- 关于行合并多个数据集
+
+```{r}
+datalist = list()
+
+for (i in 1:5) {
+    # ... make some data
+    dat <- data.frame(x = rnorm(10), y = runif(10))
+    dat$i <- i  # maybe you want to keep track of which iteration produced it?
+    datalist[[i]] <- dat # add it to your list
+}
+
+big_data = do.call(rbind, datalist)
+# or big_data <- dplyr::bind_rows(datalist)
+# or big_data <- data.table::rbindlist(datalist)
+```
+
+- 关于by aggregate tapply的使用
+参考stackoverflow.com上的一篇汇总，第二章基本数据结构讨论完再专题讨论这些内容
+
+http://stackoverflow.com/questions/3505701/r-grouping-functions-sapply-vs-lapply-vs-apply-vs-tapply-vs-by-vs-aggrega/7141669#7141669
+
+```{r}
+#建议不再使用这些基础函数，如果一定要用，参考下面代码
+# aggregate()
+aggregate(mtcars[vars],by=list(am=mtcars$am),mean)
+#aggregate()只能使用mean这样返回一个值的函数
+
+# by(),返回list
+vars<-c("mpg","hp","wt")
+#dstats<-function(x)(c(mean=mean(x),sd=sd(x)))
+dstats <- function(x) {
+   apply(x,MARGIN = 2,function(x) 
+    return(c(mean = mean(x),sd = sd(x))))
+}
+ 
+ds<-by(mtcars[vars], mtcars$am, dstats)
+str(ds)
+rs = do.call(rbind, ds)
+#方法三 tapply
+#注意tapply(X, INDEX, FUN = NULL, ..., simplify = TRUE)中的x是原子对象，一般为向量。
+
+
+```
