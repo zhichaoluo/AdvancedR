@@ -58,6 +58,18 @@ findRuns(x,tag=0,2)
 
 ```
 
+```{r}
+#Method2 by 伍佳昱 
+#
+findNum<-function(y,x,l) {
+       a<-which(y==x)
+       b<-which(diff(y,1,l-1)==0)
+       return(a[a%in%b])
+       }
+findNum(y,1,2)
+findNum(y,1,2)
+
+```
 
 ## 数据结构
 
@@ -67,6 +79,7 @@ findRuns(x,tag=0,2)
 # 计算每天最低气温和最高气温的差值
 library(reshape2)
 raw <- read.delim("data/weather.txt",check.names = F, na.strings = ".")
+head(raw)
 raw.tidy <- melt(raw,id = c("year", "month", "element"),variable.name = "day", na.rm = TRUE)
 raw <- raw.tidy[, c("year", "month", "day","element", "value")]
 tidy <- dcast(raw, year + month + day ~ element,value.var = "value")
@@ -89,7 +102,18 @@ rs<-na.omit(hflights) %>%
   mutate(quan=findInterval(ArrDelay,quantile(ArrDelay,seq(0,1,0.1)),rightmost.closed = TRUE)) %>% 
   group_by(UniqueCarrier,Year,Month,quan) %>%
   summarise(avgQuan=mean(ArrDelay,na.rm=T))
+head(rs)
 
+```
 
+```{r}
+#Method2 by 林双全
+dat <- data.table(hflights)
+dat <- na.omit(dat[,.(Year,Month,UniqueCarrier,ArrDelay)])
+dat_qua <- dat[,quan:=findInterval(ArrDelay,quantile(ArrDelay,seq(0,1,0.1)),rightmost.closed = TRUE),
+            by=.(UniqueCarrier,Year,Month)]
+dat_qua <- setorder(dat_qua,UniqueCarrier,Year,Month,quan)
+dat_delay<- dat_qua[,.(meandelay=mean(ArrDelay)),by=.(UniqueCarrier,Year,Month,quan)]
+head(dat_delay)
 ```
 
