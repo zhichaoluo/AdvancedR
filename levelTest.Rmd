@@ -19,15 +19,34 @@ header-includes:
 
 ## 向量运算
 
-- 测试：编写一个函数findNum(y,l)计算在y向量中数字1连续出现l次的位置。
+- 测试：编写一个函数findNum(x,tag,l)计算在x向量中数字tag连续出现k次的位置。
 
 ```{r,eval=FALSE}
-#y<- c(1,0,0,1,1,1,0,1,1)
+#x<- c(1,0,0,1,1,1,0,1,1)
 #计算结果为：c(4,5,8)
-findNum<-function(y,l){
-  #y是输入向量
-  #l是1连续出现的长度
+#x是输入向量
+#k是1连续出现的长度
+#tag是待查的数字
+
+findRuns <- function(x,tag,k) {
+  n <- length(x)
+  runs <- vector(length=n)
+  count <- 0
+  for (i in 1:(n-k+1)) {
+    if (all(x[i:(i+k-1)]==tag)) {
+      count <- count + 1
+      runs[count] <- i
+    }
+  }
+  if (count > 0) {
+    runs <- runs[1:count]
+  } else runs <- NULL
+  return(runs)
 }
+x<- c(1,0,0,1,1,1,0,1,1)
+
+findRuns(x,tag=0,2)
+
 
 ```
 
@@ -37,7 +56,14 @@ findNum<-function(y,l){
 - 测试：计算每天最低气温和最高气温的差值
 
 ```{r,eval=FALSE}
+# 计算每天最低气温和最高气温的差值
+library(reshape2)
 raw <- read.delim("data/weather.txt",check.names = F, na.strings = ".")
+raw.tidy <- melt(raw,id = c("year", "month", "element"),variable.name = "day", na.rm = TRUE)
+raw <- raw.tidy[, c("year", "month", "day","element", "value")]
+tidy <- dcast(raw, year + month + day ~ element,value.var = "value")
+tidy$range<-tidy$tmax-tidy$tmin
+head(tidy)
 ```
 
 ## 分组处理
@@ -46,7 +72,16 @@ raw <- read.delim("data/weather.txt",check.names = F, na.strings = ".")
 
 ```{r,eval=FALSE}
 #计算hfflights
+library(dplyr)
 library(hflights)
-str(hflights)
+
+rs<-na.omit(hflights) %>% 
+  select(UniqueCarrier,Year,Month,ArrDelay) %>%
+  group_by(UniqueCarrier,Year,Month) %>%
+  mutate(quan=findInterval(ArrDelay,quantile(ArrDelay,seq(0,1,0.1)),rightmost.closed = TRUE)) %>% 
+  group_by(UniqueCarrier,Year,Month,quan) %>%
+  summarise(avgQuan=mean(ArrDelay,na.rm=T))
+
+
 ```
 
