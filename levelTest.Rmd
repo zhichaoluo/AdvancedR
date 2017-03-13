@@ -12,6 +12,10 @@ header-includes:
 - \usepackage{xeCJK}
 ---
 
+这学期的一个新任务就是给WISERclub的高级成员举办一个AdvancedR研讨，研讨R底层的一些知识，以便更熟练的掌握R语言。
+
+下面是三道入门测试及参考答案。其中第一题来自Norman Matloff的《the Art of R programming》，第二道题目来自Hadley Wickham的TidyData这篇文章。第三道题目是我们在做一个资金流分析中遇到的一个比较有意思的问题，把它转换成题目给大家练习。
+
 
 # 水平测试
 
