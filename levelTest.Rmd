@@ -18,7 +18,7 @@ knitr::opts_chunk$set(echo =T,eval = FALSE)
 
 这学期的一个新任务就是给WISERclub的高级成员举办一个AdvancedR研讨，研讨R底层的一些知识，以便更熟练的掌握R语言。
 
-下面是三道入门测试及参考答案。其中第一题来自Norman Matloff的《the Art of R programming》，第二道题目来自Hadley Wickham的TidyData这篇文章。第三道题目是我们在做一个资金流分析中遇到的一个比较有意思的问题，把它转换成题目给大家练习。
+下面是三道入门测试及参考答案。其中第一题来自Norman Matloff的《the Art of R programming》，第二道题目来自Hadley Wickham的TidyData这篇文章。第三道题目是我们在做一个量化投资资金流分析中遇到的一个比较有意思的问题，把它转换成题目给大家练习。
 
 
 # 水平测试
@@ -27,7 +27,11 @@ knitr::opts_chunk$set(echo =T,eval = FALSE)
 
 ## 向量运算
 
-- 测试：编写一个函数findRuns(x,tag,l)计算在x向量中数字tag连续出现k次的位置。
+- 测试题目：编写一个函数findRuns(x,tag,k)计算在x向量中数字tag连续出现k次的位置。
+
+- 同学练习评价：这道题目考察大家如何使用向量方法计算游程，大部分同学都可以独立完成，但是有一部分同学把里面的一些参数写死了，这样函数的通用性就会比较弱了。还有一部分同学对向量运算中通过逻辑运算来提取向量元素的应用还不熟悉，这个问题会在第二次研讨会R语言的基础数据类型中专门讨论。
+
+- 参考答案
 
 ```{r,eval=FALSE}
 #x<- c(1,0,0,1,1,1,0,1,1)
@@ -58,6 +62,9 @@ findRuns(x,tag=0,2)
 
 ```
 
+- 学生习作
+
+这道题目有一个比较有意思的答案，是来自一位英语专业的妹纸伍佳昱同学的。虽然我们对 a%in%b的性能还没有去测试，但是这个解题的思路值得大家思考思考，看来跨界为王啊。
 ```{r}
 #Method2 by 伍佳昱 
 #
@@ -73,8 +80,11 @@ findNum(y,1,2)
 
 ## 数据结构
 
-- 测试：计算每天最低气温和最高气温的差值
+- 测试题目：计算每天最低气温和最高气温的差值
 
+- 同学练习评价：这道题目是考察大家对tidy data的理解及应用程度，在数据分析过程中，设计一个好的数据结构可以使计算效率大大提示，代码量也大大减少。也就是我们在分析过程中，为什么要常常把宽表转成窄表，窄表又转成宽表了。例题中只要将数据结构进行两次转换，答案就出来了。有部分同学直接在原始数据结构上“暴力”计算，当然吃力不讨好。但是，也正式受过“苦”，掉进“坑”，才能重视使用tidy data的思想。
+
+- 题目及参考答案：
 ```{r,eval=FALSE}
 # 计算每天最低气温和最高气温的差值
 library(reshape2)
@@ -89,8 +99,11 @@ head(tidy)
 
 ## 分组处理
 
-- 测试：计算每个航空公司(UniqueCarrier)每个月到达延误时间(ArrDelay)的每个十分位(quantile(ArrDelay,seq(0,1,0.1)))的均值。
+- 测试题目：计算每个航空公司(UniqueCarrier)每个月到达延误时间(ArrDelay)的每个十分位(quantile(ArrDelay,seq(0,1,0.1)))的均值。
 
+- 同学练习评价：这道题目之前我没有描述清楚，大部分同学都只分组计算了一个十分位，这样计算难度显著下降了。我们要求的是分组后的数据的每个十分位，即0%-10%，10%-20%，。。,然后计算分租后的十个十分位上ArrDelay的均值。这道题目如果用dplyr以及data.table都可以很容易解出，但是建议同学用base的R来尝试实现，这样会对提升分组处理能力。这道题目有一个关键的函数就是findInterval()，如果不懂得使用这个函数，如何划分十分位将十分困难。我之前就直接写算法手动实现划十分位，再用两张表交叉匹配，绕了一个大坑，在和丑高武同学讨论一个问题的时候，突然想到这个函数。
+
+- 参考答案（使用dplyr）
 ```{r,eval=FALSE}
 #计算hfflights
 library(dplyr)
@@ -106,6 +119,8 @@ head(rs)
 
 ```
 
+- 参考答案 （使用data.table）由2015应用统计林双全同学提供
+
 ```{r}
 #Method2 by 林双全
 dat <- data.table(hflights)
@@ -119,25 +134,30 @@ head(dat_delay)
 
 ## 讨论引申问题
 
+在讨论过程中，同学们提出了几个比较集中的问题，下面综合回答。
+
 - 关于行合并多个数据集
 
+在计算第三道测试题的时候，任珏佳同学尝试使用最基础的方法，将数据集分组切割后进行计算，计算的结果保存在list中，再合并到一个data frame里面，涉及到行合并多个数据集的问题。下面详细举例几种方法
+
 ```{r}
-datalist = list()
+alllist<- list()
 
 for (i in 1:5) {
-    # ... make some data
-    dat <- data.frame(x = rnorm(10), y = runif(10))
-    dat$i <- i  # maybe you want to keep track of which iteration produced it?
-    datalist[[i]] <- dat # add it to your list
+    # 创建数据集
+    ds <- data.frame(x = rnorm(10), y = runif(10))
+    ds$i <- i  # 创建一个变量来保存是第几个数据框
+    alllist[[i]] <- ds # 将数据集保存到list[[i]]
 }
 
-big_data = do.call(rbind, datalist)
-# or big_data <- dplyr::bind_rows(datalist)
-# or big_data <- data.table::rbindlist(datalist)
+alldf <- do.call(rbind, alllist)
+#还可以使用
+# alldf <- dplyr::bind_rows(alllist)
+# big_data <- data.table::rbindlist(alllist)
 ```
 
 - 关于by aggregate tapply的使用
-参考stackoverflow.com上的一篇汇总，第二章基本数据结构讨论完再专题讨论这些内容
+参考stackoverflow.com上的一篇汇总，第二章基本数据结构讨论完再专题讨论这些内容。先上一个stackoverflow上的知名帖子。
 
 http://stackoverflow.com/questions/3505701/r-grouping-functions-sapply-vs-lapply-vs-apply-vs-tapply-vs-by-vs-aggrega/7141669#7141669
 
@@ -157,7 +177,7 @@ dstats <- function(x) {
  
 ds<-by(mtcars[vars], mtcars$am, dstats)
 str(ds)
-rs = do.call(rbind, ds)
+rs <- do.call(rbind, ds)
 #方法三 tapply
 #注意tapply(X, INDEX, FUN = NULL, ..., simplify = TRUE)中的x是原子对象，一般为向量。
 

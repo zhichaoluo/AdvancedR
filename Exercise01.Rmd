@@ -1,0 +1,42 @@
+---
+title: "Advanced R 研讨"
+subtitle: "练习一"
+author: "罗智超Rokia.org"
+output: 
+  pdf_document: 
+    fig_caption: yes
+    keep_tex: yes
+    latex_engine: xelatex
+    toc: yes
+header-includes:
+- \usepackage{xeCJK}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo =T,eval = FALSE)
+```
+
+
+## 前言
+
+AdvancedR 研讨会举行的第二天，就收到学院几个已经毕业的同学点赞。心情大悦！统计系本科毕业生董安澜童鞋，目前身在北大攻读统计学博士，仍然心系厦大的学弟学妹们，看到我们组织的AdvancedR研讨会后发来一道题目及答案，给大家练习，希望大家珍惜。
+
+## 题目
+
+- 求同一类资产同时出现在一个时间范围的最大次数及所在id。如下面样例数据中dow这个产品在id=c(30,40,50) 这三个区间中都出现，同时dow这个产品在id=c(30,40,60)这三个区间也同时出现过（所谓同时出现，就是这几个id时间范围有重叠区间）。因此，dow在同时出现在一个时间范围的最大次数为3，所在id为：id=c(30,40,50)以及id=c(30,40,60)。建议同学先把样本数据print出来看下数据结构，再看题目。有疑问先在群上提问，把题目弄清楚了，再下笔写程序。
+
+- 可以使用向量、dplyr、data.table、Rcpp等工具实现
+
+
+
+```{r}
+#样本数据
+ds<-data.frame(id=seq(10,80,by=10),
+               anest=c("baker","baker",rep("dow",6)),
+               start=c("08:00","09:00","09:00","08:00","10:00","12:30","13:30","18:00"),
+               end=c("11:00","13:00","15:30","13:30","11:30","13:30","14:30","19:00"))
+
+ds
+
+```
+
