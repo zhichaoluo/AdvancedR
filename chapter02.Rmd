@@ -1,0 +1,233 @@
+---
+title: "Advanced R 研讨"
+author: "罗智超Rokia.org"
+output:
+  html_document:
+    keep_md: yes
+    toc: yes
+  pdf_document:
+    fig_caption: yes
+    keep_tex: yes
+    latex_engine: xelatex
+    toc: yes
+
+subtitle: 第二章 数据结构
+header-includes: \usepackage{xeCJK}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo =T,eval = FALSE)
+```
+
+
+# 整体把握
+
+- why?
+
+- R的数据类型的多样性是把双刃剑，由于多样所以灵活，由于灵活，所以掌握难度较大。
+
+- 掌握好向量的基本功是掌握其他数据类型的基础。
+
+Dim | Homogeneous | Heterogeneous
+----|------|------
+1d | Atomic vector | List
+2d | Matrix | Data frame
+nd | Array
+
+
+
+- 标量
+
+- 向量 矩阵 数组
+
+- 列表 数据框
+
+
+# 向量
+
+- 向量有两种形式：原子向量(Atomic Vector 所有元素类型都一样)和列表(List)，有三个共同属性typeof, length, attributes可以使用unlist()把list转成原子向量。
+
+- 原子型(atomic)：logical, integer, double(numeric), character, complex, raw
+
+```{r}
+dbl_var<-c(1,2.5,4.5)
+int_var<-c(1L,6L,10L)
+x<-1:3
+y<-c(1,2,3)
+typeof(x)
+
+#NA是一个长度为1的逻辑向量
+#NA_real_ NA_integer_ NA_character_
+
+```
+
+- 类型和测试
+
+```{r}
+x<-1:10
+is.character(x)
+is.double(x)
+is.integer(x)
+is.logical(x)
+is.atomic(x)
+#is.numeric()用于判断向量的“数值性”，无论整型还是双精都返回TRUE
+is.numeric(x)
+```
+
+- 强制转换
+
+```{r}
+x<-c("a",1)
+x<-c(F,T,F,"a")
+as.numeric(x)
+```
+
+- 递归向量(recurssive)
+
+列表也常称为递归向量
+```{r}
+x<-list(1:3,"a",c(T,F),c(2.3,5.9))
+x<-list(list(list(list(y=1))))
+is.recursive(x)
+
+
+#c()强制将向量转换成list
+x<-c(list(1,2),c(3,4))
+y<-list(list(1,2),c(3,4))
+str(x)
+str(y)
+
+#
+is.list()
+as.list()
+unlist()
+
+```
+
+- 练习
+```{r}
+#
+c(1,F)
+c("a",1)
+c(list(1),"a")
+c(TRUE,1L)
+#为什么要将列表转成原子向量要使用unlist()而不是as.vector()
+
+#为什么1=="1"返回的结果为T，为什么-1<F结果也是T，为什么"one"<2返回的结果为F
+
+#为什么默认的缺失值NA是逻辑向量？逻辑型向量的特殊之处是什么？
+c(FALSE,NA_character_)
+c(FALSE,NA)
+c(1,NA)
+```
+
+# 属性
+
+- 所有对象都可以通过任意附加的属性来存储对象的元数据。可以通过att()单独访问对象的每一个属性，也可以使用attributes()同时访问所有的属性。
+
+- 一般情况下，向量被修改后它的大多数属性都会丢失。但是3个最重要的属性不会丢失 name dimention class,对应的获取函数 names(),dim(),class()
+
+```{r}
+y<-1:10
+attr(y,"my nickname")<-"I am vector"
+attr(y,"my nickname")
+str(attributes(y))
+```
+
+
+- 属性的一个重要应用就是因子。因子只能包含预先定义值的向量，常用于存储分类数据。因子看起来像字符型，但实际建立在整型向量的基础之上，它有两个属性：class(), levels()
+
+```{r}
+x<-factor(c("a","b","c","a"))
+class(x)
+levels(x)
+#不能使用不在因子列表里面的因子，不能合并因子
+read.csv(,na.strings = "")
+read.csv(stringsAsFactors = F)
+data.frame(stringsAsFactors = F)
+
+```
+
+
+# 矩阵和数组
+
+- 给一个原子向量增加一个dim()属性后，它的行为就是多维数组(array)，数组的一个特例就是矩阵(matrix)
+
+# 数据框
+
+- tidy data: http://vita.had.co.nz/papers/tidy-data.pdf
+
+- 数据框是最常用的数据类型，类似于SAS里面的dataset
+
+- 数据框是特殊的List,是包含向量的list
+
+- 不同的列可以包含不同的模式（数值、字符、逻辑、因子）
+
+- 创建数据框
+
+
+```{r}
+df<-data.frame(x=1:3,y=c("a","b","c"),stringsAsFactors = F)
+
+```
+
+- data.frame是S3类，所以他的类型反映了构建它的基础向量：列表。
+```{r}
+typeof(df)
+class(df)
+```
+
+- 合并数据框
+
+```{r}
+x<-cbind(df,1:3)
+class(x)
+rbind()
+
+```
+
+- data.frame的列可以包含list
+
+```{r}
+df<-data.frame(x=1:3)
+df$y<-list(1:2,1:3,1:4)
+
+#Error 会将列表中的每个元素都放入自己的列中，如果长度一样，不报错
+data.frame(x=1:3,y=list(1:2,1:3,1:4))
+#I()使data.frame()把列表看作一个单元
+data.frame(x=1:3,y=I(list(1:2,1:3,1:4)))
+
+```
+
+#章节测试
+
+```{r}
+#Q1除了所包含的内容，向量的3个性质？
+x<-1:10
+typeof(x)
+length(x)
+attributes(x)
+#Q2原子向量的4种常见类型？两种罕见类型？
+#logical, integer, double(numeric), character, 
+#complex,raw
+
+#Q3 属性是什么？如何获取属性并设置它？
+#属性是附加得任意元数据，可以把属性作为一个命名列表。可以通过attr()单独访问对象得每一个属性，也可以使用attributes()同时访问所有的属性。
+
+#Q4 列表与原子向量有哪些不同？矩阵与数据框有啥不同？
+#原子向量为同一类型，使用c()创建；列表可以包含不同类型。长度也不一样。使用list()来创建
+#矩阵是带有维度的向量，元素类型都一样。数据框是长度一样的列表，不同列的元素类型可以不一样
+
+#Q5能由矩阵构成一个列表么？数据框中的某一列可以由矩阵构成么？
+#可以由矩阵构成一个列表。
+#可以
+x<-matrix(1:10,2)
+y<-1:2
+z<-data.frame(y)
+z$x<-x
+str(z)
+
+
+```
+
+
