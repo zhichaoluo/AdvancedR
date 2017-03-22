@@ -20,13 +20,30 @@ knitr::opts_chunk$set(echo =T,eval = FALSE)
 ```
 
 
-# 整体把握
 
-- why?
+## R语言特点
 
 - R的数据类型的多样性是把双刃剑，由于多样所以灵活，由于灵活，所以掌握难度较大。
 
+如果学习过C语言的同学会发现，在R中不需要对函数输入输出的数据类型进行定义。这是由R的血统决定的，R语言是由统计学家发明的，它诞生的目的主要是用于快速的数据探索、建模及图形展示，因此在提升灵活性的同时，自然要丧失一些严谨，鱼和熊掌不可兼得。
+
+但是，如果你去看R语言里面函数的源代码的时候，会发现里面有很多代码在判断函数输入的数据类型是什么，再根据不同的数据类型采用不同的方法。因此，实际上是开发人员增加了代码工作量，来保障了用户可以灵活使用，而不必考虑自己的输入类型是否正确。并且，在很多情况下，即使用户输入了错误的数据类型（不要太离谱的错误），R函数都会尽其所能将数据类型强制转换为可接受类型。
+
+R语言的这个语言特点也会给初学者带来较大的困惑，因为常常会不知道该输入什么数据类型，会输出什么数据类型，比如lapply(),sapply(),tapply(),by(),aggregate()等函数的输入输出的细微差别对初学者的打击还是很具杀伤力的。所以Hadley开发了一个plyr包，提供了类似于ddply(),dlply()这样的函数，第一个字母代表参数输入类型，第二个字母代表函数输出类型，方便用户使用。
+
+
 - 掌握好向量的基本功是掌握其他数据类型的基础。
+
+深入了解了R语言的数据类型后，会发现其实很多数据类型的后面都是向量，比如矩阵(Matrix)就是多了一个维度属性的向量，列表(List)实际上是递归(Recursive)向量。对于学习过C语言或者数据库的同学可能很难理解向量这个概念，因为一言不合就写个循环遍历一组数据是个常态。其实，R语言的向量运算的核心代码大部分也是由C语言实现的，其实也是一堆的循环。只是R语言的发明者认为，不需要大家那么辛苦自己写循环，苦力活底层帮解决了。如果使用过SAS语言的同学会发现，SAS的data / set语句其实也内嵌了一个循环遍历所处理的数据。
+
+还有另外一个很重要的原因是统计研究中有大量的公式运算是通过矩阵运算来实现。这些运算如果通过SQL语句来实现，代码量将不是一个数量级别的。
+
+综上，好好学好向量是掌握好R语言的坚实基础。
+
+
+## 数据类型分类
+
+
 
 Dim | Homogeneous | Heterogeneous
 ----|------|------
@@ -35,27 +52,52 @@ Dim | Homogeneous | Heterogeneous
 nd | Array
 
 
+## 常用数据类型定义
 
-- 标量
+从下面各个数据类型的定义来看，其基础核心都是向量。
 
-- 向量 矩阵 数组
+- 向量
 
-- 列表 数据框
+R语言中最基础的数据类型。包括两种风格：原子向量和列表
+
+- 数组
+
+原子向量增加dim()属性就是数组了
+
+- 矩阵
+
+矩阵是数组的特例，是二维数组
+
+- 列表
+
+也称为递归型(Recursive)向量
+
+- 数据框
+
+是由相同长度的向量构成的列表
+
+- 因子
+
+因子建立在整型向量的基础之上，具有两个属性class()和levels()
 
 
-# 向量
+## 数据类型特性——向量
 
 - 向量有两种形式：原子向量(Atomic Vector 所有元素类型都一样)和列表(List)，有三个共同属性typeof, length, attributes可以使用unlist()把list转成原子向量。
 
 - 原子型(atomic)：logical, integer, double(numeric), character, complex, raw
 
 ```{r}
+#练习
 dbl_var<-c(1,2.5,4.5)
 int_var<-c(1L,6L,10L)
 x<-1:3
+class(x)
 y<-c(1,2,3)
+class(y)
 typeof(x)
-
+library(pryr)
+x[is.na(x)]
 #NA是一个长度为1的逻辑向量
 #NA_real_ NA_integer_ NA_character_
 
@@ -64,6 +106,7 @@ typeof(x)
 - 类型和测试
 
 ```{r}
+#练习
 x<-1:10
 is.character(x)
 is.double(x)
@@ -72,14 +115,17 @@ is.logical(x)
 is.atomic(x)
 #is.numeric()用于判断向量的“数值性”，无论整型还是双精都返回TRUE
 is.numeric(x)
+
 ```
 
 - 强制转换
 
 ```{r}
+#练习
 x<-c("a",1)
-x<-c(F,T,F,"a")
+x<-c(F,T,F,1)
 as.numeric(x)
+#强制转换顺序： 字符、数值、逻辑
 ```
 
 - 递归向量(recurssive)
@@ -90,14 +136,13 @@ x<-list(1:3,"a",c(T,F),c(2.3,5.9))
 x<-list(list(list(list(y=1))))
 is.recursive(x)
 
-
 #c()强制将向量转换成list
 x<-c(list(1,2),c(3,4))
 y<-list(list(1,2),c(3,4))
 str(x)
 str(y)
 
-#
+#library(rlist)
 is.list()
 as.list()
 unlist()
@@ -106,7 +151,7 @@ unlist()
 
 - 练习
 ```{r}
-#
+
 c(1,F)
 c("a",1)
 c(list(1),"a")
@@ -121,7 +166,7 @@ c(FALSE,NA)
 c(1,NA)
 ```
 
-# 属性
+## 属性
 
 - 所有对象都可以通过任意附加的属性来存储对象的元数据。可以通过att()单独访问对象的每一个属性，也可以使用attributes()同时访问所有的属性。
 
@@ -132,6 +177,7 @@ y<-1:10
 attr(y,"my nickname")<-"I am vector"
 attr(y,"my nickname")
 str(attributes(y))
+
 ```
 
 
@@ -139,21 +185,40 @@ str(attributes(y))
 
 ```{r}
 x<-factor(c("a","b","c","a"))
+?gl
+
 class(x)
 levels(x)
 #不能使用不在因子列表里面的因子，不能合并因子
-read.csv(,na.strings = "")
+read.table(stringsAsFactors = F)
+
 read.csv(stringsAsFactors = F)
 data.frame(stringsAsFactors = F)
 
 ```
 
 
-# 矩阵和数组
+## 数据类型特性——矩阵和数组
 
 - 给一个原子向量增加一个dim()属性后，它的行为就是多维数组(array)，数组的一个特例就是矩阵(matrix)
+```{r}
+a<-matrix(1:6,ncol = 3,nrow = 2)
+b<-array(1:12,c(2,3,2))
 
-# 数据框
+c<-1:6
+dim(c)<-c(3,2)
+dim(c)<-c(2,3)
+#
+length()
+names()
+#合并
+cbind()
+rbind()
+
+```
+
+
+## 数据类型特性——数据框
 
 - tidy data: http://vita.had.co.nz/papers/tidy-data.pdf
 
@@ -174,7 +239,10 @@ df<-data.frame(x=1:3,y=c("a","b","c"),stringsAsFactors = F)
 - data.frame是S3类，所以他的类型反映了构建它的基础向量：列表。
 ```{r}
 typeof(df)
+
 class(df)
+lapply(df,fun)
+
 ```
 
 - 合并数据框
@@ -183,6 +251,8 @@ class(df)
 x<-cbind(df,1:3)
 class(x)
 rbind()
+cbind()
+
 
 ```
 
@@ -195,7 +265,8 @@ df$y<-list(1:2,1:3,1:4)
 #Error 会将列表中的每个元素都放入自己的列中，如果长度一样，不报错
 data.frame(x=1:3,y=list(1:2,1:3,1:4))
 #I()使data.frame()把列表看作一个单元
-data.frame(x=1:3,y=I(list(1:2,1:3,1:4)))
+df<-data.frame(x=1:3,y=I(list(1:2,1:3,1:4)))
+df$y[[1]][1]
 
 ```
 
