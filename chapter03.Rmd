@@ -1,0 +1,280 @@
+---
+title: "Advanced R 研讨"
+subtitle: "第三章：子集选取"
+author: "罗智超Rokia.org"
+output:
+  html_document:
+    keep_md: yes
+    toc: yes
+  pdf_document:
+    fig_caption: yes
+    keep_tex: yes
+    latex_engine: xelatex
+    toc: yes
+
+
+header-includes: \usepackage{xeCJK}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo =T,eval = FALSE)
+```
+
+## 教材
+
+- 《Advanced R》chapter03
+
+## 背景介绍
+
+R语言的子集选取功能能够让你使用非常简明的语句实现数据的复杂操作，这是其他语言所无法比拟的。然而，子集选取的学习也有一定的困难，需要多加强练习，才能熟练掌握其精髓。
+
+## 子集选取——原子向量
+
+可以使用五种方法来取原子向量子集:正整数、负整数、逻辑向量、空索引、0(zero)、字符向量
+
+```{r}
+x<-c(2.1,4.2,3.3,5.4)
+#使用正整数
+x[c(3,1)]
+x[c(1,1)]
+x[c(2.1,2,9)]
+#使用负整数
+x[-c(3,1)]
+#使用逻辑向量,如果逻辑向量比原始向量短，逻辑向量会被循环直到与对应的向量长度一致
+x[c(T,T)]
+x[x>3]
+
+#使用空索引
+x[] #返回原始向量
+
+#使用0 返回长度为0的向量，常用于创建测试数据
+x[0]
+
+#字符向量返回与索引中的名字相匹配的元素
+(y<-setNames(x,letters[1:4]))
+y[c("a","b","c")]
+
+```
+
+## 子集选取——列表
+
+- [ 返回列表
+
+- [[,$将列表中的元素取出。
+
+- [提取火车车厢，[[、$将火车车厢里面的东西取出来
+
+## 子集选取——矩阵、数组
+
+- 可以使用多个向量
+
+- 可以使用单个向量
+
+- 可以使用矩阵
+
+```{r}
+a<-matrix(1:9,nrow=3)
+colnames(a)<-c("A","B","C")
+#多个向量
+a[1:2,]
+#单一向量,因为矩阵是向量
+b<-a[c(2,3)]
+#使用矩阵
+c<-matrix(c(1,1,2,3),ncol = 2,byrow = T)#默认以列优先排列
+a[c] #Exercise01中使用到这个方法
+
+```
+
+## 子集选取——数据框
+
+- 因为数据框具备列表和矩阵的特点，所以：
+
+- 使用单一向量取数据框得子集，则数据框的行为像列表
+
+- 如果使用两个向量取子集，则数据框的行为像矩阵
+
+```{r}
+df<-data.frame(x=1:3,y=3:1,z=letters[1:3])
+#像列表
+df[c("x","z")]
+#像矩阵
+df[,c("x","z")]
+
+#注意以下结果的差异，第一个的结果是矩阵，第二个的结果是向量。是因为如果使用matrix的方法选择单一列，会默认降维，而采用list的方法不会。
+str(df["x"])
+str(df[,"x"]) 
+
+```
+
+## 子集选取——S3对象
+
+S3对象是由原子向量、数组和列表组成的，可以用以上的技术来获取。最常见的例子是从lm的回归结果中提取元素。
+
+## 子集选取——S4对象
+
+- @等价于"$"，@比"$"更严格，如果对应的字段不存在,@将会返回一个错误。
+
+- slot()等价于[[
+
+## 子集选取运算符
+
+- [[
+
+- $
+
+```{r}
+#比较以下子集提取方法及结果类型
+
+df[["x"]]
+df["x"]
+df$x
+df[1]
+df[,1]
+```
+
+- 如果已知数据框中某一列的名字，但这个名字存储在一个变量中，如果在$后面不直接引用列的名字，而是使用变量就会出错。
+
+```{r}
+var<-"cyl"
+#以下方法出错
+mtcars$var
+#以下方法正确
+mtcars[[var]]
+```
+
+## 子集选取与赋值
+
+- 所有子集选取运算符可以和赋值结合在一起使用
+
+```{r}
+x<-1:5
+c[c(1,2)]<-2:3
+x[-1]<-4:1
+x[c(1,1)]<-2:3
+
+#数值不能与NA一起使用
+#如果是自动产生索引向量，要注意产生NA的问题
+x[c(1,NA)]<-c(1,2)
+#数值可以与逻辑一起使用
+x[c(T,F,NA)]<--1
+
+```
+
+- 子集选取使用空引用再结合赋值操作时会保持原有的对象类型和数据结构
+
+```{r}
+mtcars[]<-lapply(mtcars,as.integer)
+mtcars<-lapply(mtcars,as.integer)
+```
+
+- 对于列表，可以使用子集选取+赋值+NULL来删除列表元素
+
+```{r}
+x<-list(a=1,b=2)
+x[["b"]]<-NULL
+```
+
+- 对于列表，可以使用[和list(NULL)增加合法的NULL
+
+```{r}
+y<-list(a=1)
+y["b"]<-list(NULL)
+
+```
+
+## 子集选取应用
+
+- 查询表(字符子集选取)，例如将简写转换为全拼
+
+```{r}
+x<-c("m","f","u","f","f","m","m")
+lookup<-c(m="Male",f="Female",u=NA)
+lookup[x]
+unname(lookup[x])
+```
+
+- 人工对比与合并
+
+```{r}
+#将grade向量对应的级别在info表中的desc信息提取出来
+grades<-c(1,2,2,3,1)
+info<-data.frame(
+  grade=3:1,
+  desc=c("Excellent","Good","Poor"),
+  fail=c(F,F,T)
+)
+
+#方法一:使用match()
+id<-match(grades,info$grade)
+info[id,]
+
+#方法二:使用rownames()
+rownames(info)<-info$grade
+info[as.character(grades),]
+
+#补充%in%
+a<-c(1,3,4,5,6,7)
+b<-c(3,5)
+a %in% b
+b %in% a
+```
+
+- 随机样本/自助法(整数子集选取)
+
+```{r}
+#使用sample()产生索引向量，然后来提取数据框里面的行
+
+df<-data.frame(x=rep(1:3,each=2),y=6:1,z=letters[1:6])
+set.seed(1)
+df[sample(nrow(df)),]
+df[sample(nrow(df),3),]
+df[sample(nrow(df),6,replace = T),]
+
+```
+
+- 排序
+
+```{r}
+x<-c("b","c","a")
+order(x)
+x[order(x)]
+```
+
+- 展开重复记录(整数子集选取)
+
+```{r}
+df<-data.frame(x=c(2,4,1),y=c(9,11,6),n=c(3,5,1))
+a<-rep(1:nrow(df),df$n)
+df[a,]
+```
+
+- 删除数据框中某些列(字符子集选取)
+
+```{r}
+#方法一
+df<-data.frame(x=1:3,y=3:1,z=letters[1:3])
+df$z<-NULL
+
+#方法二
+df[c("x","y")]
+df[setdiff(names(df),"z")]
+```
+
+- 根据子条件选取行(逻辑子集选取)
+
+```{r}
+mtcars[mtcars$gear==5,]
+mtcars[mtcars$gear==5 & mtcars$cyl==4,]
+
+```
+
+- 布尔代数与集合(逻辑和整数子集选取)
+
+```{r}
+x<-sample(10)<4
+which(x)
+which.max()
+which.min()
+
+```
+
