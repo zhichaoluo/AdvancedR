@@ -1,0 +1,469 @@
+---
+title: "Advanced R 研讨"
+subtitle: "第四章：常用函数与数据结构"
+author: "罗智超Rokia.org"
+output:
+  html_document:
+    keep_md: yes
+    toc: yes
+  pdf_document:
+    fig_caption: yes
+    keep_tex: yes
+    latex_engine: xelatex
+    toc: yes
+
+
+header-includes: \usepackage{xeCJK}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo =T,eval = FALSE)
+```
+
+## 教材
+
+- 《Advanced R》chapter04
+
+## 导读
+
+R语言有非常多功能强大函数，熟练使用，事半功倍。但是建议在使用R语言函数时最好查看下函数的源代码，因为：（1）阅读源代码是学习编程语言最有效的一个方法；（2）可以了解函数实现原理，往往基础函数都是经过锤炼的，里面的算法大部分都比较经典。（3）也可以看下是不是调用原函数(.Primitive)等使用比较底层的C语言实现的，对使用函数的效率心里有个底。
+
+本章介绍了
+
+- 查看源代码的几种常见方法
+
+- 获取R语言的源代码
+
+- 阅读源代码时必须掌握的一些基础函数
+
+- Hadley推荐必须掌握的一些基础函数
+
+
+## 查看源代码的几种常见方法
+
+- 直接输入函数名
+
+```{r}
+combn
+
+```
+
+
+- 对于类函数，直接输入函数名不能显示出源代码
+
+```{r}
+plot
+methods(plot)
+plot.default
+page(plot.default)
+#带有*的方法
+getAnywhere(plot.lm)
+#以.开头的函数.login
+getAnywhere(.login)
+
+```
+
+- 使用第三方语言
+
+基本在R包的src目录下面。注意要下载源代码包(*.tar.gz)，而不是二进制的包。
+
+## R语言源代码
+
+R 官方源代码：
+https://svn.r-project.org/R/
+https://github.com/wch/r-source
+
+
+## 阅读源代码时必须掌握的一些基础函数
+
+```{r}
+
+#帮助阅读代码的一些函数
+#？
+methods()#获取方法列表
+getAnywhere()#查看隐藏的代码
+
+page(parse) #P191 将字符串转换成表达式
+deparse #将表达式转换成字符串
+
+substitute#P167 查找参数，但不看参数的值，而看用来计算参数值得代码，返回表达式，常和deparse()一起使用。
+quote #与substitute类似，捕获一个表达式，但是不会做进一步转换。eval(quote(x))完全等价于x
+eval
+eval.parent #eval(expr, parent.frame(n))
+evalq #eval(quote(expr), ...)
+get
+assign
+
+```
+
+## Hadley推荐的函数 
+
+```{r,eval=FALSE}
+
+page(source)
+tail
+getAnywhere(tail.data.frame)
+head
+
+$
+
+[[
+[
+with
+with.default
+subset
+page(subset.data.frame)
+page(attach)
+detach
+
+#str
+str(mtcars)
+
+#运算符和赋值
+=
+<-
+<<-
+#比较
+
+
+%in% #match()  .Internal(match)
+x<-c(3,5,6)
+y<-1:10
+x %in% y
+y %in% x
+
+setdiff(c(1:6,7:2),c(3,7,12))
+all.equal #R
+identical #.Internal
+
+all #.Primitive
+any #.Primitive
+!=
+==
+>
+>=
+<
+<=
+is.na #.Primitive
+complete.cases # .External(C_compcases, ...)
+is.finite #.Primitive
+Vectorize
+
+#基础数学
+
+abs
+sign
+acos
+asin
+atan
+atan2
+sin
+cos
+tan
+ceiling
+floor
+round
+trunc
+signif
+exp
+log
+log10
+log2
+sqrt
+max
+min
+prod
+sum
+cummax
+cummin
+cumprod #向量方法计算收益率
+cumsum
+diff #R
+pmax 
+pmin 
+which.max
+which.min
+range
+mean
+median
+cor #.Call(C_cor)
+sd
+var #.Call(C_cor)
+rle #
+
+# Functions to do with functions
+missing  #.Primitive
+on.exit #.Primitive
+return #.Primitive
+invisible #.Primitive
+
+# Logical & sets 
+&
+|
+!
+
+xor
+
+all
+any
+intersect#methods()
+union
+setdiff
+setequal
+which
+
+# Vectors and matrices
+c
+matrix
+# automatic coercion rules character > numeric > logical
+length
+dim
+ncol
+nrow
+cbind
+rbind#.Internal
+names
+colnames
+rownames
+t
+diag
+?sweep#?
+as.matrix
+?data.matrix
+
+# Making vectors 
+c
+rep #.Primitive
+rep_len 
+seq
+seq_len
+seq_along
+rev #R
+sample #R sample.int .Internal
+choose #组合数
+combn #组合
+factorial #阶乘
+(is/as).(character/numeric/logical/...)
+
+# Lists & data.frames 
+list
+unlist
+data.frame
+as.data.frame
+
+#分组
+split #R
+cut
+strsplit
+findInterval
+.bincode
+tabulate
+expand.grid
+
+# Control flow 
+if
+&&
+|| (short circuiting)
+for
+while
+next
+break
+switch
+ifelse
+
+# Apply & friends
+lapply #.Internal
+sapply #lapply
+vapply #.Internal(vapply)
+apply #vapply
+tapply #lapply
+replicate #sapply
+
+# Date time
+ISOdate
+ISOdatetime #R
+strftime #as.POSIXlt
+strptime #.Internal(strptime)
+date #make_datetime 1970-01-01
+difftime #.difftime
+julian
+months
+quarters
+weekdays
+library(lubridate)
+
+# Character manipulation 
+grep #.Internal(grep)
+agrep #.Internal(agrep)
+gsub #.Internal(gsub)
+strsplit#.Internal(strsplit)
+chartr#.Internal(chartr)
+nchar#.Internal(nchar)
+tolower#.Internal
+toupper#.Internal
+substr#.Internal
+paste#.Internal
+trimws#R
+library(stringr)
+
+# Factors 
+factor #R
+levels#?
+nlevels
+reorder
+relevel #tapply
+cut
+findInterval
+interaction #R
+options(stringsAsFactors = FALSE)
+
+# Array manipulation
+array #.Internal(array)
+dim #.Primitive
+dimnames#.Primitive
+?aperm #.Internal
+library(abind)
+
+# Ordering and tabulating 
+duplicated #.Internal
+anyDuplicated
+unique #.Internal
+page(merge.data.frame)# rbind, .Internal(merge)
+
+order #.Internal
+sort #order
+rank #.Internal
+quantile
+page(getAnywhere(quantile.default))
+page(table)
+tabulate
+page(getAnywhere(ftable.default))
+xtabs
+# Linear models 
+fitted
+predict
+page(predict.lm)
+resid
+rstandard
+page(lm) #
+page(lm.fit) #.Call(C_Cdqrls)
+page(glm)
+hat
+influence.measures
+logLik
+df
+deviance
+formula
+~
+I
+anova
+coef
+confint
+vcov
+contrasts
+
+# Miscellaneous tests
+apropos("\\.test$")
+apropos("\\.lm$")
+page(apropos)
+
+# Random variables 
+(q, p, d, r) * (beta, binom, cauchy, chisq, exp, f, gamma, geom, 
+  hyper, lnorm, logis, multinom, nbinom, norm, pois, signrank, t, 
+  unif, weibull, wilcox, birthday, tukey)
+
+# Matrix algebra 
+crossprod
+tcrossprod
+eigen
+qr
+svd
+%*%
+%o%
+outer
+rcond
+solve
+
+# Workspace 
+ls
+exists
+rm
+getwd
+setwd
+q
+source
+install.packages
+library
+require
+
+# Help
+help
+?
+help.search
+apropos
+RSiteSearch
+citation
+demo
+example
+vignette
+
+# Debugging
+traceback
+browser
+recover
+options(error = )
+stop
+warning
+message
+tryCatch
+try
+
+# Output
+print
+cat
+message
+warning
+dput
+format
+sink
+capture.output
+sprintf
+
+# Reading and writing data
+data
+count.fields
+read.csv
+write.csv
+read.delim
+write.delim
+read.fwf
+readLines
+writeLines
+readRDS
+saveRDS
+load
+save
+library(foreign)
+
+# Files and directories 
+dir
+basename
+dirname
+tools::file_ext
+file.path
+path.expand
+normalizePath
+file.choose
+file.copy
+file.create
+file.remove
+file.rename
+dir.create
+file.exists
+file.info
+tempdir
+tempfile
+download.file
+library(downloader)
+```
+
