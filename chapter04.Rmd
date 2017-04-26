@@ -1,6 +1,6 @@
 ---
 title: "Advanced R 研讨"
-subtitle: "第四章：常用函数与数据结构"
+subtitle: "第四章：常用函数与源代码阅读"
 author: "罗智超Rokia.org"
 output:
   html_document:
