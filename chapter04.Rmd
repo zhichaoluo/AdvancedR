@@ -20,15 +20,14 @@ header-includes: \usepackage{xeCJK}
 knitr::opts_chunk$set(echo =T,eval = FALSE)
 ```
 
-## 教材
+## 说明
 
-- 《Advanced R》chapter04
+由于期中考试，AdvancedR研讨暂停了两周。考试一结束，同学们对AdvancedR讨论组“满满的爱”又回来了。而且来的波涛汹涌，增加了好多位新同学，小小的N208已经容纳不下我们对知识的渴望。
 
-## 导读
+（阅读说明：可以将微信内容直接paste到rmd文件中阅读，或者直接访问https://github.com/zhichaoluo/AdvancedR/blob/master/chapter04.Rmd）
 
-R语言有非常多功能强大函数，熟练使用，事半功倍。但是建议在使用R语言函数时最好查看下函数的源代码，因为：（1）阅读源代码是学习编程语言最有效的一个方法；（2）可以了解函数实现原理，往往基础函数都是经过锤炼的，里面的算法大部分都比较经典。（3）也可以看下是不是调用原函数(.Primitive)等使用比较底层的C语言实现的，对使用函数的效率心里有个底。
 
-本章介绍了
+##本章介绍了
 
 - 查看源代码的几种常见方法
 
@@ -39,12 +38,82 @@ R语言有非常多功能强大函数，熟练使用，事半功倍。但是建�
 - Hadley推荐必须掌握的一些基础函数
 
 
+## 教材
+
+- 《Advanced R》chapter04
+
+## 导读
+
+R语言有非常多功能强大函数，熟练使用，事半功倍。但是建议在使用R语言函数时最好查看下函数的源代码，因为：（1）阅读源代码是学习编程语言最有效的一个方法；（2）可以了解函数实现原理，往往基础函数都是经过锤炼的，里面的算法大部分都比较经典。（3）也可以看下是不是调用原函数(.Primitive)等使用比较底层的C语言实现的，对使用函数的效率心里有个底。
+
+其实还有一个最重要的原因是，目前市面上有关R语言的教材大部分都只是介绍R的应用，教你调用几个函数而已，涉及R语言底层编程开发的教材寥寥无几。（除了Hadley这本《Advanced R》我在[第一章](http://rokia.org/?p=575)还介绍了几本Chamber大大的书）。因此，要想真正了解R的底层，最好的办法就是阅读别人的源代码。以下列出了R源代码中经常涉及的一些知识点。看看你掌握了几点。如果都不知道的话你只能说自己还不会使用R语言。
+
+- functional programming
+
+- oop programming
+
+- meta programming
+
+- enviroment
+
+- lexical scope
+
+- dynamic scope
+
+- lazy evaluation
+
+- Non-standard evaluation
+
+- Namespace
+
+
+## 举几个小栗子感受下为什么统计学家偏爱R语言
+
+- Bootstrap Univariate Function
+
+```{r}
+
+boot<-function(x,statistic,bootreps){
+  n<-length(x)
+  sapply(1:bootreps,
+         function(dummy)
+           statistic(sample(x,n,replace = T)))
+}
+```
+
+
+- Likelihood Function
+
+假设$x$来自指数分布,$f(x)=\mu e^{-x\mu}$,可以使用似然方法来估计$\mu$，对数似然函数为$l(\mu)=nlog(\mu)-\mu\sum(x_i)$，最大似然估计的值就是$l(\mu)$取最大值时候的$\mu$。可以创建以下函数来计算$l(\mu)$
+
+```{r}
+Rmlfun <-
+  function(x){
+    sumx<-sum(x)
+    n<-length(x)
+    function(mu) n*log(mu)-mu*sumx
+  }
+efun<-Rmlfun(x)
+x<-rexp(n = 100, rate=2)
+efun(2)
+
+```
+
+
 ## 查看源代码的几种常见方法
 
 - 直接输入函数名
 
 ```{r}
 combn
+page(combn)
+#练习1：修改combn
+#练习2：逐条运行调试，掌握其中的算法思想
+#source(file.r)
+#debug()
+#combn2(c(1:5),3)
+#undebug()
+
 
 ```
 
@@ -56,9 +125,11 @@ plot
 methods(plot)
 plot.default
 page(plot.default)
+
 #带有*的方法
 getAnywhere(plot.lm)
-#以.开头的函数.login
+
+#以.开头的函数例如.login
 getAnywhere(.login)
 
 ```
@@ -67,17 +138,29 @@ getAnywhere(.login)
 
 基本在R包的src目录下面。注意要下载源代码包(*.tar.gz)，而不是二进制的包。
 
+```{r}
+#使用pryr在线查询(貌似目前不work了)
+pryr::show_c_source(.Internal(match.call(definition, call, expand.dots)))
+```
+
+
 ## R语言源代码
 
 R 官方源代码：
-https://svn.r-project.org/R/
-https://github.com/wch/r-source
+
+- https://svn.r-project.org/R/
+
+R 源代码第三方Git地址：
+
+- https://github.com/wch/r-source
 
 
 ## 阅读源代码时必须掌握的一些基础函数
 
 ```{r}
-
+#注释快捷键
+# ctrl+shift+c
+# commnd+shift+c
 #帮助阅读代码的一些函数
 #？
 methods()#获取方法列表
@@ -86,13 +169,19 @@ getAnywhere()#查看隐藏的代码
 page(parse) #P191 将字符串转换成表达式
 deparse #将表达式转换成字符串
 
-substitute#P167 查找参数，但不看参数的值，而看用来计算参数值得代码，返回表达式，常和deparse()一起使用。
+substitute#P167 查找参数，但不看参数的值，而看用来计算参数值的代码，返回表达式，常和deparse()一起使用。
 quote #与substitute类似，捕获一个表达式，但是不会做进一步转换。eval(quote(x))完全等价于x
 eval
 eval.parent #eval(expr, parent.frame(n))
 evalq #eval(quote(expr), ...)
 get
 assign
+list2env
+env
+
+#举个例子
+page(subset.data.frame)
+
 
 ```
 
@@ -127,6 +216,7 @@ str(mtcars)
 
 
 %in% #match()  .Internal(match)
+`%in%`
 x<-c(3,5,6)
 y<-1:10
 x %in% y
@@ -431,6 +521,7 @@ sprintf
 
 # Reading and writing data
 data
+page(read.table)
 count.fields
 read.csv
 write.csv
