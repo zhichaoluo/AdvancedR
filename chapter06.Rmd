@@ -1,0 +1,366 @@
+---
+title: "Advanced R 研讨"
+subtitle: "第六章：函数"
+author: "罗智超Rokia.org" 
+output:
+  html_document:
+    keep_md: yes
+    toc: yes
+  pdf_document:
+    fig_caption: yes
+    keep_tex: yes
+    latex_engine: xelatex
+    toc: yes
+
+
+header-includes: \usepackage{xeCJK}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo =T,eval = FALSE)
+```
+
+## 教材
+
+- 《Advanced R》chapter06
+
+## 导读
+
+函数是R的基本组成部分。本章重点加强理解函数是如何工作的。
+
+```{r}
+#一切皆对象
+#一切皆函数调用
+#——John Chambers
+```
+
+
+主要内容
+
+- 函数的3个主要组成部分
+
+- 如何从变量名找到其相应取值（词法作用域过程）
+
+- 所有事情都是函数调用
+
+- 提供参数的3种方法，如何使用参数列表调用函数，惰性求值
+
+- 中缀函数、替换函数
+
+- 如何返回值，函数退出
+
+## 函数组成部分
+
+所有R的函数都包括
+
+- body() 函数的内部代码 类型expression
+
+- formals() 控制如何调用函数的参数列表 类型 pairlist
+
+- enviroment() 函数变量位置的“地图” 
+
+```{r}
+f<-function(x){
+  x^2}
+formals(f)
+body(f)
+
+environment(f)
+
+```
+
+## 原函数
+
+原则上函数包含以上3部分，除了原函数.Primitive(),原函数直接调用C代码。
+
+[R .Internal  official document address](https://cran.r-project.org/doc/manuals/r-release/R-ints.html#g_t_002eInternal-vs-_002ePrimitive)
+
+## 词法作用域
+
+R包含两种类型的作用域：
+
+- 词法作用域(lecical scoping),在当前函数内查找变量，然后到定义函数的地方查找变量；查找顺序：当前函数-》定义函数的地方-》全局环境-》添加包-》空环境
+
+- 动态作用域(dynamic scoping),在函数调用的地方查找，而不是在定义的地方查找
+
+```{r}
+#词法作用域
+a=1
+b=2
+f<-function(x) a*x+b
+g<-function(x){
+  a<-2
+  b<-1
+  f(x)
+}
+g(2)
+
+#f在g中定义
+a=1
+b=2
+
+g<-function(x){
+  a=2;b=1
+  f<-function(x) a*x+b
+  f(x)
+
+}
+g(2)
+
+#动态作用域
+
+a=1
+b=2
+f<-function(x) {
+  
+  print(parent.frame())
+  a*x+b
+  }
+g<-function(x){
+  a<-2
+  b<-1
+  environment(f) <- environment()
+  print(environment()  )
+  f(x)
+}
+g(2)
+
+#动态作用域
+
+x <- "global"
+f1 <- function() cat("f1:", x, "\n")
+f2 <- function() cat("f2:", evalq(x, parent.frame()), "\n")
+fun <- function() {
+  x <- "f1"
+  f1()
+  f2()
+  environment(f1) <- environment()
+  f1()
+}
+fun()
+```
+
+词法作用域实现的四个基本原则
+
+- 名字屏蔽 Name Masking
+
+- 函数与变量 Functions vs. variables
+
+- 重新开始 A fresh start
+
+- 动态查找 Dynamic lookup
+
+##每个运算都是一次函数调用
+
+```{r}
+x<-10
+y<-5
+`+`(x,y)
+
+`for`(i,1:2,print(i))
+`if`(i==1,print("Yes"),print("No"))
+`[`(x,3)
+
+#比较以下函数的结果
+
+sapply(1:5,`+`,3)
+sapply(1:5,"+",3)
+
+#第一个是称为+的对象的值，第二个是包含+的字符串。lapply可以用函数的*名字*而不是函数本身作为参数。
+#lapply FUN <- match.fun(FUN)
+
+x<-list(1:3,4:9,10:12)
+sapply(x,"[",2)
+sapply(x,function(x) x[2])
+```
+
+##函数参数
+
+函数参数包括
+
+- 形式参数
+
+- 实际参数
+
+## 函数匹配顺序
+
+设置参数的方法包括：
+
+- 完全匹配
+
+- 前缀匹配
+
+- 位置匹配
+
+
+##...Gobble up everything else
+
+
+```{r}
+#example 1
+rescale<-function(x, ...){
+  m<-mean(x,...)
+  s<-sd(x,...)
+  (x-m)/s
+}
+x<-c(NA,1:3)
+rescale(x)
+rescale(x,na.rm=T)
+#example 2
+f<-function(x)x
+g<-function(x,...)x
+f(1:4,foo="bar")
+g(1:4,foo="bar")
+
+#example 3
+f<-function(...) list(...)
+g<-function(x,y,...) f(...)
+g(x=1,y=2,z=3,w=4)
+
+
+```
+
+##使用参数列表来调用函数
+
+```{r}
+args<-list(1:10,na.rm=T)
+do.call(mean,list(1:10,na.rm=T))
+do.call(rbind,mylist)
+
+#alist()
+
+```
+
+##默认参数和缺失参数
+
+```{r}
+f<-function(a=1,b=2){
+  c(a,b)
+}
+f()
+
+g<-function(a=1,b=a*2){
+  c(a,b)
+}
+```
+
+## 惰性求值(Lazy evaluation)
+
+```{r}
+#example 1
+f<-function(x){
+  #force(x)
+    10
+}
+f(stop("Error!"))
+
+add<-function(x){
+  #force(x)
+  function(y) x+y
+}
+adders<-lapply(1:10,add)
+adders[[1]](10)
+#example2
+
+f<-function(x=ls()){
+  a<-1
+  x
+}
+f()
+f(ls())
+```
+
+##约定 promise
+
+没有被求值的参数称为约定(promise)或者称为形式转换(thumk)，可以使用pryr::promise_info()来查找更多promise的信息。promise由以下两个部分组成：
+
+- 产生延迟计算的表达式。(substitute())
+
+- 创建和计算表达式的环境
+
+##R 语言定义里面的关于promise对象的解释
+
+promise对象（promise objects）是 R 的lazy evaluation 机制的一部分。它们含有三个槽（slots）：值，表达式和环境。当一个函数被调用，首先参数匹配，然后每个形式参数都会被一个promise约束。用作形似参数的表达式以及函数调用的环境的指针都保存在promise里面。
+
+直到该参数被访问，才会有值关联promise。当参数被访问时，保存的表达式会在保存的环境中求值，并返回结果。结果同样被promise保存。函数substitute会提取一个表达式槽里面的内容。这使得程序员既可以访问promise相关的值也可以访问相关的表达式。
+
+在 R 语言里面，promise对象常常是隐含的对象。（在以后的R发布版本中，它们相对R代码是透明的，因为它们总是在被访问的时候求值。）实际的函数参数是这种类型的。函数 delayedAssign 可以使一个promise出现在表达式的外面。
+
+##中缀函数
+
+函数的名字排在参数中间。所有用户创建的中缀函数必须以%开头，以%结尾。
+
+- R中预定义的中缀函数: %%, %*%, %/%, %in%, %o%, %x%
+
+- R中不需要%的内置中缀函数：::,:::,$,@,^,*,/,+,-,>,>=,<,<=,==,!=,!,&,&&,|,||,~,<-,<<-
+
+```{r}
+`%+%`<-function(a,b) paste(a,b,sep=' ')
+"Hello" %+% "World!"
+`%+%`("Hello","World!")
+
+```
+
+##替换函数
+
+- 替换函数**看上去**像对参数进行原地修改。
+
+```{r}
+library(pryr)
+
+`second<-`<-function(x,value){
+  x[2]<-value
+  x
+}
+x<-1:10
+address(x)
+second(x)<-5L
+address(x)
+```
+
+- 使用.Primitive()实现的内置函数将对对象进行原地修改
+
+```{r}
+x<-1:10
+address(x)
+x[1]<-7L
+address(x)
+#结果还是有变化
+```
+
+##返回值
+
+在一个函数中最后一个被计算的表达式成为函数的返回值。应当显式使用return()函数。可以返回一个包含任意数量对象的列表。
+
+## 退出
+
+函数退出时可以使用on.exit()来触发其他事件。
+
+```{r}
+in_dir<-function(dir,code){
+  old<-setwd(dir)
+  on.exit(setwd(old))
+  force(code)
+}
+getwd()
+in_dir("~",getwd())
+
+```
+
+
+##函数编程(Functional programming)的其他基础概念
+
+- 纯函数(pure function)[https://jigsawye.gitbooks.io/mostly-adequate-guide/content/ch3.html] 总是将相同的输入映射到相同的输出，并且不会对工作空间产生任何影响。也就是说纯函数没有副作用(side effect),除了返回值以外，不会对整个环境的状态产生任何影响。
+
+- 一等函数(First Class Function)[https://jigsawye.gitbooks.io/mostly-adequate-guide/content/ch2.html]
+
+- 高阶函数(Higher-Orer Functions)
+以函数作为参数，或者以函数作为返回结果
+
+- 柯里化(curry)[https://en.wikipedia.org/wiki/Curry_(programming_language)]
+
+- compose() partical()
+
+- point-free编程
+
+- library(functional)
