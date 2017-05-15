@@ -1,0 +1,304 @@
+---
+title: "Advanced R 研讨"
+subtitle: "第七章：面向对象编程"
+author: "罗智超Rokia.org" 
+output:
+  html_document:
+    keep_md: yes
+    toc: yes
+  pdf_document:
+    fig_caption: yes
+    keep_tex: yes
+    latex_engine: xelatex
+    toc: yes
+
+
+header-includes: \usepackage{xeCJK}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo =T,eval = FALSE)
+```
+
+## 教材
+
+- 《Advanced R》chapter07
+
+## 导读
+
+R的前生S语言的血统来自C和Fortran，来自新西兰奥克兰大学的Ross Ihaka和Robert Gentleman 将lambda和scheme引入了S语言，变成了我们现在使用的R。应该说她主要还是函数式编程语言。但是R语言也是支持面向对象的，不仅支持，还包括了3个面向对象系统S3、S4、RC。
+
+- 面向对象是一种对现实世界理解和抽象的方法,通过面向对象的方法，更利于用人理解的方式对复杂系统进行分析、设计与编程。同时，面向对象能有效提高编程的效率，通过封装技术，消息机制可以像搭积木的一样快速开发出一个全新的系统。
+
+- S3 使用了一种称为泛型函数OO的面向对象编程方式。它通过一种称为泛型函数（generic function）的特殊函数来决定调用哪个方法。S3是一个很不正式的OO系统。它没有类的正式定义。
+
+- S4的工作方式与S3类似，但比S3更正式。S4有正式的类定义，它描述了每个类的表示方法和继承方法，并且有特殊的帮助函数用于定义泛型函数和方法。S4还有多重分派，这就意味着泛型函数可以根据有任意参数的类来选择调用方法。
+
+- RC 参考类，与S3和S4有显著不同，RC实现消息传递OO，所以方法属于类而不属于函数。$用来分割类和方法。RC对象同样是可变的：它们不使用通常的复制后修改（copy-on-modify）的语义，而是在原地进行修改。
+
+- 基础类型（base type），它是构成其他OO系统的内部C语言级别的类型。基本类型大多使用C代码操作。它们提供了其他OO系统的基础单元。
+
+## 基础类型
+
+- 所有R对象的底层都是一个用来描述这个对象如何在内存中存储的C结构体。这个结构体包含这个对象的内容、内存分配信息以及类型（type）。基础对象不是真正的面向对象系统，因为只有R的核心团队才能创建新类型。
+
+- R语言定义中的(基础类型)[https://cran.r-project.org/doc/manuals/r-release/R-lang.html#Basic-types]列出了所有基础类型
+
+## S3
+
+- S3是R的第一个也是最简单的OO系统。S3是非正式的和特别的OO系统，它的极简主义的优雅：去掉其中任何一部分都会影响整个OO系统的使用。
+
+## 案例
+
+- 以下案例来自张丹(R语言面向对象编程)[http://blog.fens.me/r-object-oriented-intro/](R语言基于S3的面向对象编程)[http://blog.fens.me/r-class-s3/]
+
+
+## R语言实现封装
+
+```{r}
+# 定义老师对象和行为
+teacher <- function(x, ...) UseMethod("teacher")
+teacher.lecture <- function(x) print("讲课")
+teacher.assignment <- function(x) print("布置作业")
+teacher.correcting <- function(x) print("批改作业")
+teacher.default<-function(x) print("你不是teacher")
+
+# 定义同学对象和行为
+student <- function(x, ...) UseMethod("student")
+student.attend <- function(x) print("听课")
+student.homework <- function(x) print("写作业")
+student.exam <- function(x) print("考试")
+student.default<-function(x) print("你不是student")
+
+# 定义两个变量，a老师和b同学
+a<-'teacher'
+b<-'student'
+
+# 给老师变量设置行为
+attr(a,'class') <- 'lecture'
+# 执行老师的行为
+teacher(a)
+##[1] "讲课"
+
+# 给同学变量设置行为
+attr(b,'class') <- 'attend'
+# 执行同学的行为
+student(b)
+##[1] "听课"
+
+attr(a,'class') <- 'assignment'
+teacher(a)
+##[1] "布置作业"
+
+attr(b,'class') <- 'homework'
+student(b)
+##[1] "写作业"
+ 
+attr(a,'class') <- 'correcting'
+teacher(a)
+##[1] "批改作业"
+ 
+attr(b,'class') <- 'exam'
+student(b)
+##[1] "考试"
+
+# 定义一个变量，既是老师又是同学 
+ab<-'student_teacher'
+# 分别设置不同对象的行为
+attr(ab,'class') <- c('lecture','homework')
+# 执行老师的行为
+teacher(ab)
+##[1] "讲课"
+
+# 执行同学的行为
+student(ab)
+##[1] "写作业"
+```
+
+## R语言实现继承
+
+```{r}
+# 给同学对象增加新的行为
+student.correcting <- function(x) print("帮助老师批改作业")
+
+# 辅助变量用于设置初始值
+char0 = character(0)
+
+# 实现继承关系
+create <- function(classes=char0, parents=char0) {
+     mro <- c(classes)
+     for (name in parents) {
+         mro <- c(mro, name)
+         ancestors <- attr(get(name),'type')
+         mro <- c(mro, ancestors[ancestors != name])
+     }
+     return(mro)
+ }
+
+# 定义构造函数，创建对象
+ NewInstance <- function(value=0, classes=char0, parents=char0) {
+     obj <- value
+     attr(obj,'type') <- create(classes, parents)
+     attr(obj,'class') <- c('homework','correcting','exam')
+     return(obj)
+ }
+
+# 创建父对象实例
+ StudentObj <- NewInstance()
+
+# 创建子对象实例
+ s1 <- NewInstance('普通同学',classes='normal', parents='StudentObj')
+ s2 <- NewInstance('课代表',classes='leader', parents='StudentObj')
+
+# 给课代表，增加批改作业的行为
+ attr(s2,'class') <- c(attr(s2,'class'),'correcting')
+
+# 查看普通同学的对象实例
+ s1
+#[1] "普通同学"
+attr(,"type")
+#[1] "normal"     "StudentObj"
+attr(,"class")
+#[1] "homework"   "attend" "exam"      
+
+# 查看课代表的对象实例
+ s2
+#[1] "课代表"
+attr(,"type")
+#[1] "leader"     "StudentObj"
+attr(,"class")
+#[1] "homework"   "attend" "exam"       "correcting"
+```
+
+##R语言实现多态
+
+```{r}
+# 创建优等生和次等生，两个实例
+ e1 <- NewInstance('优等生',classes='excellent', parents='StudentObj')
+ e2 <- NewInstance('次等生',classes='poor', parents='StudentObj')
+
+# 修改同学考试的行为，大于85分结果为优秀，小于70分结果为及格
+ student.exam <- function(x,score) {
+     p<-"考试"
+     if(score85) print(paste(p,"优秀",sep=""))
+     if(score<70) print(paste(p,"及格",sep=""))
+ }
+
+# 执行优等生的考试行为，并输入分数为90
+ attr(e1,'class') <- 'exam'
+ student(e1,90)
+#[1] "考试优秀"
+
+# 执行次等生的考试行为，并输入分数为66
+ attr(e2,'class') <- 'exam'
+ student(e2,66)
+#[1] "考试及格"
+```
+
+##R的面向过程编程
+
+- 定义老师和同学两个对象和行为
+
+```{r}
+# 辅助变量用于设置初始值
+ char0 = character(1)
+
+# 定义老师对象和行为
+ teacher_fun<-function(x=char0){
+     if(x=='lecture'){
+         print("讲课")
+     }else if(x=='assignment'){
+         print("布置作业")
+     }else if(x=='correcting'){
+         print("批改作业")
+     }else{
+         print("你不是teacher")
+     }
+ }
+
+# 定义同学对象和行为 
+ student_fun<-function(x=char0){
+     if(x=='attend'){
+         print("听课")
+     }else if(x=='homework'){
+         print("写作业")
+     }else if(x=='exam'){
+         print("考试")
+     }else{
+         print("你不是student")
+     }
+ }
+
+# 执行老师的一个行为
+ teacher_fun('lecture')
+#[1] "讲课"
+
+# 执行同学的一个行为
+ student_fun('attend')
+#[1] "听课"
+```
+
+- 区别普通同学和课代表的行为
+
+```{r}
+# 重定义同学的函数，增加角色判断
+ student_fun<-function(x=char0,role=0){
+     if(x=='attend'){
+         print("听课")
+     }else if(x=='homework'){
+         print("写作业")
+     }else if(x=='exam'){
+         print("考试")
+     }else if(x=='correcting'){
+         if(role==1){#课代表
+             print("帮助老师批改作业")  
+         }else{
+             print("你不是课代表")  
+         }
+     }else{
+         print("你不是student")
+     }
+ }
+
+# 以普通同学的角色，执行课代表的行为
+ student_fun('correcting')
+#[1] "你不是课代表"
+
+# 以课代表的角色，执行课代表的行为
+ student_fun('correcting',1)
+#[1] "帮助老师批改作业"
+```
+
+- 参加考试，以成绩区别出优等生和次等生
+
+```{r}
+# 修改同学的函数定义，增加考试成绩参数
+ student_fun<-function(x=char0,role=0,score){
+     if(x=='attend'){
+         print("听课")
+     }else if(x=='homework'){
+         print("写作业")
+     }else if(x=='exam'){
+         p<-"考试"
+         if(score85) print(paste(p,"优秀",sep=""))
+         if(score<70) print(paste(p,"及格",sep=""))
+     }else if(x=='correcting'){
+         if(role==1){#课代表
+             print("帮助老师批改作业")  
+         }else{
+             print("你不是课代表")  
+         }
+     }else{
+         print("你不是student")
+     }
+ }
+
+# 执行考试函数，考试成绩为大于85分，为优等生
+ student_fun('exam',score=90)
+#[1] "考试优秀"
+
+# 执行考试函数，考试成绩为小于70分，为次等生
+ student_fun('exam',score=66)
+#[1] "考试及格"
+```
+
