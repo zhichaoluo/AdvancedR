@@ -1,0 +1,327 @@
+---
+title: "Advanced R 研讨"
+subtitle: "第八章：环境"
+author: "罗智超Rokia.org" 
+output:
+  html_document:
+    keep_md: yes
+    toc: yes
+  pdf_document:
+    fig_caption: yes
+    keep_tex: yes
+    latex_engine: xelatex
+    toc: yes
+
+
+header-includes: \usepackage{xeCJK}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo =T,eval = FALSE)
+```
+
+## 教材
+
+- 《Advanced R》chapter08
+
+## 导读
+
+R的环境(Enviroment)是R语言里面比较重要但又比较难理解的内容，熟练掌握其原理对掌握Lexical Scoping、Dynamic Scoping、Non Standard Programming、Lazy evaluation、NameSpace等概念都非常有帮助。市面上很多R语言教材基本都不涉及该部分内容，即使涉及也仅仅一笔带过。AdvancedR这本书里面专门辟了一章的内容来介绍，足以彰显其重要性。
+
+## 环境基础
+
+- 环境是什么？环境是一个数据结构，是作用域发挥作用的数据结构。即将一些名字与值进行关联或者绑定(bind)。环境存储的是一个命名关系，命名指向的对象并不在环境中。
+
+
+- 环境具有引用语义(reference semantics)。当在一个环境中对其绑定的元素进行修改时，环境不会被复制，修改在原地进行。
+
+```{r}
+
+library(pryr)
+
+e<-new.env()
+address(e)
+e$a<-F
+e$b<-"a"
+e$c<-2.3
+e$d<-1:3
+address(e)
+
+```
+
+
+- 每个环境都有父环境，父环境用于词法作用域(lexical scoping)。如果一个名字在当前环境没有找到，R就会到他的父环境中寻找，直到空环境为止(Empty Environment)
+
+- 环境与列表相似，除了：(1)环境中的每个对象都有一个唯一的名字；(2)环境中的对象是没有顺序的;(3)环境有父环境;(4)环境有引用语义。
+
+- 环境由两部分构成：对象框(Frame)和父环境(parent.env or enclosing environment )。对象框包含名称-对象的绑定关系。注意，parent.frame()指的是当前正在调用的环境。
+
+- 四个特殊环境：globalenv()全局环境；baseenv(),基础环境；emptyenv()空环境；environment()当前环境
+
+```{r}
+#查看全局环境的所有父环境（搜索路径）
+search()
+```
+
+- 可以使用ls(),ls.str()列出环境中对象框(Frame)的绑定对象。默认情况下ls()只能列出不是以"."开始的名字，可以通过参数设置all.names=TRUE来显示所有绑定。
+```{r}
+e$.x<-"secret"
+ls(e)
+ls(e,all.names=TRUE)
+ls.str(e,all.names=TRUE)
+```
+
+- 给定一个被绑定的对象名可以使用$、[[或get()来或者与其绑定的值
+
+```{r}
+e$a
+e[[a]]
+get("a",envir = e)
+```
+
+- 使用exists()来确定一个绑定是否存在。
+
+```{r}
+exists("a",envir = e)
+#如果不希望在父环境中查找，可以设置inherits=FALSE
+exists("a",envir = e,inherits=FALSE)
+
+```
+
+## 在环境上使用递归
+
+- 由于环境的树型结构，可以使用递归方法来查找名字。给定一个名字，可以使用pryr::where()找到定义这个名字的环境。
+
+```{r}
+where
+
+function (name, env = parent.frame()) 
+{
+    stopifnot(is.character(name), length(name) == 1)
+    env <- to_env(env)
+    if (identical(env, emptyenv())) {
+        stop("Can't find ", name, call. = FALSE)
+    }
+    if (exists(name, env, inherits = FALSE)) {
+        env
+    }
+    else {
+        where(name, parent.env(env))
+    }
+}
+
+```
+
+- pryr::where()展示了三种情况：(1)基本情况：已经达到空环境，没有找到绑定；(2)成功情况：在环境中，存在该名字，返回这个环境；(3)递归情况：在这个环境中没有找到该名字，尝试在父环境中继续查找。
+
+```{r}
+#使用递归方法
+f <- function(..., env = parent.frame()) {
+  if (identical(env, emptyenv())) {
+    # base case
+  } else if (success) {
+    # success case
+  } else {
+    # recursive case
+    f(..., env = parent.env(env))
+  }
+}
+
+#使用循环方法
+is_empty <- function(x) identical(x, emptyenv())
+
+f2 <- function(..., env = parent.frame()) {
+  while(!is_empty(env)) {
+    if (success) {
+      # success case
+      return()
+    }
+    # inspect parent
+    env <- parent.env(env)
+  }
+}
+```
+
+## 函数的环境(Function Environments)
+
+- 函数包括四个环境：enclosing environment, binding environment, execution environment, calling environment.
+
+- enclosing environment:创建函数的环境。每个函数只有一个enclosing environment,对于其他三个环境，每个函数可以有0、1、多个关联环境。enclosing environment环境属于该函数，永远不会改变，甚至将该函数移动到不同环境。enclosing environment决定了这个函数如何找到值。
+
+
+
+
+```{r}
+
+y<-1
+f<-function(x) x+y
+
+
+```
+
+![enclosing environment](image/EnclosingEnvironment.png)
+
+
+- 绑定环境binding environment,函数的名字可以通过绑定来定义。binding environment决定如何找到函数名。一般情况函数的binding environment 和enclosing environment是一样的。但有时也可以是不一样的，如下面例子。
+
+```{r}
+environment(e$g)
+e<-new.env()
+e$g<-function() 1
+```
+
+![binding environment](image/BindingEnvironment.png)
+
+- binding environment和 enclosing environment的区别对于package的命名空间(Namespace)非常重要。软件包命名空间使软件包之间保持独立。
+
+- 每个package有两个与相关联的环境：package environment和 namespace environment。package environment包含所有可以访问的公共函数，并且存在搜索路径上。namespace environment包含所有的函数（包括内部函数）,并且它的父环境也是一个很重要的环境，它包含了这个package需要的所有函数(import)的绑定。
+
+- Every exported function in a package is bound into the package environment, but enclosed by the namespace environment. 包输出的函数的binding environment是package environment, enclosing environment是namespace environment。
+
+
+![package env and namespace env](image/packageenv.png)
+![package namespace](image/namespace.png)
+
+
+- execution environment 每次调用函数时，都创建一个新的执行环境。执行环境的父环境是函数的enclosing environment
+```{r}
+h<-function(x){
+  a<-2
+  x+a
+}
+y<-h(1)
+```
+![execution environment](image/executionenv.png)
+
+
+- 当在另外一个函数中创建一个函数时，子函数的enclosing environment就是父函数的execution environment。execution environment不再是临时的。
+
+```{r}
+plus<-function(x){
+  function(y)x+y
+}
+plus_one<-plus(1)
+parent.env(environment(plus_one))
+environment(plus)
+```
+
+
+- calling environment: 可以使用parent.frame()来获取当前的调用环境
+
+```{r}
+h<-function(){
+  x<-10
+  function(){x}
+}
+i<-h()
+x<-20
+i()
+```
+
+```{r}
+f2<-function(){
+  x<-10
+  function(){
+    def<-get("x",environment())#get enclosing environment 
+    cll<-get("x",parent.frame())#get calling environment
+    list(defined=def,called=cll)
+    }
+}
+g2<-f2()
+x<-20
+str(g2())
+```
+
+```{r}
+x<-0
+y<-10
+f<-function(){
+  x<-1
+  g()
+}
+
+g<-function(){
+  x<-2
+  h()
+}
+
+h<-function(){
+  x<-3
+  x+y
+}
+f()
+```
+
+![calling environment](image/callingenv.png)
+
+- Note that each execution environment has two parents: a calling environment and an enclosing environment. R’s regular scoping rules only use the enclosing parent; parent.frame() allows you to access the calling parent.
+
+- Looking up variables in the calling environment rather than in the enclosing environment is called dynamic scoping.  Dynamic scoping is primarily useful for developing functions that aid interactive data analysis. It is one of the topics discussed in non-standard evaluation.
+
+## 绑定姓名和数值
+
+- 普通的赋值箭头<-在当前环境中创建一个变量。<<-在父环境中修改已有变量。也可以使用assign()来进行深度绑定。
+
+```{r}
+name<<-value
+assign("name",value,inherits = T)
+
+```
+
+- 延时绑定 delayed binding,不是立即把结果赋值给一个表达式，它创建和存储一个约定(promise)，在需要时对约定的表达式进行求值。使用%<d-%来创建延时绑定。%<d-%是对基础delayedAssign()函数的封装。
+
+```{r}
+library(pryr)
+system.time(b %<d-% {Sys.sleep(1);1})
+system.time(b)
+`%<d-%`
+```
+
+- 主动绑定(active binding) 不是绑定到常量对象。相反，每次对其访问都要重新进行计算。%<a-%是对基础函数makeActiveBinding()的封装。
+```{r}
+x  %<a-% runif(1)
+x
+x
+```
+
+##Explicit environments
+
+- 环境也是一种很有用的数据结构，因为其具有引用语义，当对环境进行修改时，R不会对其进行复制。
+
+```{r}
+modify<-function(x){
+  x$a<-2
+  invisible()
+}
+
+x_l<-list()
+x_l$a<-1
+modify(x_l)
+x_l$a
+
+x_e<-new.env()
+x_e$a<-1
+modify(x_e)
+x_e$a
+
+```
+
+- 环境是解决以下三类问题常见问题的有用数据结构：（1）避免大数据的复制；（2）管理一个软件包内部的状态；（3）根据名字高效地查找其绑定的值
+
+
+- 管理包内部状态
+
+```{r}
+my_env <- new.env(parent = emptyenv())
+my_env$a <- 1
+
+get_a <- function() {
+  my_env$a
+}
+set_a <- function(value) {
+  old <- my_env$a
+  my_env$a <- value
+  invisible(old)
+}
+```
+
